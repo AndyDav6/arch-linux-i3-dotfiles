@@ -1,7 +1,7 @@
 # Arch Linux + i3wm en PC de bajos recursos
 
 ## ¿Por qué hice esto?
-Revitalizar una computadora obsoleta con Intel Pentium G3250 y 4GB de RAM. Necesitaba un entorno gráfico funcional sin sacrificar rendimiento, porque ya no daba mas con Windows 10.
+Revitalizar una computadora obsoleta con Intel Pentium G3250 y 4GB de RAM. Necesitaba un entorno gráfico funcional sin sacrificar rendimiento, porque ya no daba mas con Windows 10 asi que decidi andentrarme al mundo de linux y la mejor opcion mas adecuada era [instalar arch](./docs/installations-steps.md).
 
 ## Setup actual
 - **Entorno principal**: i3-WM (ligero, eficiente)
