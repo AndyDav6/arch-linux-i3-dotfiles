@@ -1,5 +1,3 @@
-# arch-linux-i3-dotfiles
-
 # Arch Linux + i3wm en PC de bajos recursos
 
 ## ¿Por qué hice esto?
