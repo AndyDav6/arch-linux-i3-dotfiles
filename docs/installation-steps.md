@@ -1,135 +1,117 @@
-# Pasos de instalación de Arch
+# Guia de instalacion de Arch para PC de bajos recursos
+Esta guía documenta el proceso que seguí para instalar Arch Linux en una computadora de recursos limitados, basado en la [Arch Wiki oficial](https://wiki.archlinux.org/title/Installation_guide).
 
-## 1. Verificar si hay conexión a Internet
-```bash
-ping -c 2 google.com
-```
+## Hardware objetivo
+- Procesador: Intel(R) Pentium(R) G3250 (2) @ 3.20GHz
+- RAM: 3.74 de RAM
+- Disco: SATA 1TB de almacenamiento
 
-## 2. Cargar el keyboard o el idioma del teclado
-```bash
-loadkeys es
-loadkeys la-latin1
-```
+## Resumen del proceso
 
-## 3. Crear las particiones
+### 1. Preinstalación
+- Verificar conexión a internet: `ping -c 2 google.com`
+- Configurar teclado: `loadkeys es` (español)
+- Verificar modo UEFI/BIOS: `ls /sys/firmware/efi/efivars` (vacío = BIOS)
+
+### 2. Particionado (BIOS)
 ```bash
-fsdisk -l /dev/sda
+fdisk -l /dev/sda
 cfdisk /dev/sda
 ```
 
-## 4. Formatear las particiones
+Estructura aplicada:
+| Particion | Tamaño | Tipo |
+|===========================|
+| /dev/sda1 | 16G    | SWAP |
+|===========================|
+| /dev/sda2 | 200G   | ext4 (/) |
+|===========================|
+| /dev/sda3 | 704G   | ext4 (/home) |
+|===========================|
+
+### 3. Formateo y particiones
 ```bash
 mkfs.ext4 /dev/sda2
 mkfs.ext4 /dev/sda3
 mkswap /dev/sda1
-```
 
-## 5. Montaje de las particiones
-```bash
 mount /dev/sda2 /mnt
-
 mkdir -p /mnt/home
 mount /dev/sda3 /mnt/home
-
 swapon /dev/sda1
-
-lsblk
 ```
 
-## 6. Instalacion base del sistema
+### 4. Instalación base del sistema
 ```bash
-pacstrab -K /mnt base base-devel linux linux-firmware sudo nano vim nvim wget which
+pacstrap -K /mnt base base-devel linux linux-firmware sudo nano vim networkmanager
 ```
 
-## 7. Generar el fstab
+### 5. Generar fstab
 ```bash
 genfstab -U /mnt >> /mnt/etc/fstab
 ```
 
-Debemos
+### 6. Chroot al sistema
 ```bash
-cat /mnt/etc/fstab
+arch-chroot /mnt
 ```
 
-
-## 8. Entrar al sistema
+### 7. Configuración regional
 ```bash
-arch-root /mnt
-```
-
-## 9. Configurar el sistema
-```bash
-ln -sf /usr/share/zoneinfo/America/guayaquil /etc/localtime
+ln -sf /usr/share/zoneinfo/America/Guayaquil /etc/localtime
 hwclock --systohc
 
-echo "es_EC.UTF-8 UTF-8" >> /etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-# o
-nano /etc/locale.gen
+nano /etc/locale.gen  # Descomentar es_EC.UTF-8 y en_US.UTF-8
 locale-gen
 
-# Hostname
-echo "and" > /etc/hostname
-#  o
-nano /etc/hostname
+echo "LANG=es_EC.UTF-8" > /etc/locale.conf
+```
 
-# Hosts
+### 8. Red y hostname
+```bash
+echo "arch-i3-pc" > /etc/hostname
+
 cat > /etc/hosts << EOF
 127.0.0.1   localhost
 ::1         localhost
-127.0.1.1   and.localdomain and
+127.0.1.1   arch-i3-pc.localdomain arch-i3-pc
 EOF
-# o 
-nano /etc/hosts
+
+systemctl enable NetworkManager
 ```
 
-## 10. Creacion de la contraseña del root y crear el usuario
+### 9. Usuario y contraseñas
 ```bash
-passwd
-
-# Creamos un usuario
-useradd -m -G wheel,audio,video -s /bin/bash and 
+passwd  # root
+useradd -m -G wheel,audio,video -s /bin/bash and
 passwd and
 
-# Configurar sudo, descomentamos esta línea: %wheel ALL=(ALL:ALL) ALL
-# Para buscar mas rapido usemos ctrl + w
-EDITOR=nano visudo
-
-# Red
-pacman -S networkmanager
-systemctl enable --now NetworkManager
+EDITOR=nano visudo  # Descomentar: %wheel ALL=(ALL:ALL) ALL
 ```
 
-## 11. Instalar el entorno de escritorio
+### 10. Entorno gráfico
 ```bash
-# Instalamos Xorg y KDE
-pacman -S xorg plasma-meta konsole dolphin plasma-nm kscreen
+# Xorg y controladores Intel
+pacman -S xorg mesa vulkan-intel intel-media-driver
 
-# Instalamos el gestor de sesión
-pacman -S lightdm
+# KDE Plasma
+pacman -S plasma-meta konsole dolphin
+
+# Gestor de pantalla (compartido)
+pacman -s lightdm
 systemctl enable lightdm
-
-# Instalar los Drivers Intel
-pacman -S mesa vulkan-intel intel-media-driver
-
-# Es importante dependiendo de que escritorio queramos tener en nuestro Arch
-# debemos ir a su pagina y leer su documentacion
 ```
 
-## 12. Instalar el bootloader **(Grub)**
+### 11. Bootloader (GRUB para BIOS)
 ```bash
-pacman -S grub os-prober
-
-# Instalamos el GRUB  y ajustamos /dev/sda al disco, sin número.
+pacman -S grub
 grub-install --target=i386-pc /dev/sda
-
-# Generamos la configuración
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-## 13. Salir y reiniciar
+### 12. Finalizar
 ```bash
-exit  # Salir del chroot
-umount -R /mnt # Desmontamos
-reboot # Reiniciamos
+exit
+umount -R /mnt
+reboot
 ```
